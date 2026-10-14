@@ -8,7 +8,7 @@ A minimal menu bar and system tray timer for macOS and Windows. Click the hourgl
 
 [한국어](README.ko.md) · [Install](#installation) · [Build from source](#build-from-source) · [Contributing](#contributing) · [MIT License](LICENSE)
 
-> **Early MVP:** The Apple Silicon macOS release build, frontend checks, 16 JavaScript tests, 13 Rust tests, formatting, and Clippy pass. The app has been installed in Applications and its login LaunchAgent points to the installed executable. A local Universal macOS build also passes. Native UI interactions, actual login, Windows CI, and public release/Homebrew installation are still pending. See [verification status](BUILD_STATUS.md).
+> **Early MVP:** macOS installation and login registration, Git source installation, and Homebrew Cask installation have been verified. Universal macOS and Windows x64 installers are published in [v0.1.0](https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0); native CI, 16 JavaScript tests, 13 Rust tests, formatting, and Clippy pass. Native UI, actual login/Sleep, and Windows runtime remain unverified. macOS downloads are ad-hoc signed without Apple notarization. See [verification status](BUILD_STATUS.md).
 
 ## The idea
 
@@ -20,7 +20,7 @@ The project focuses on a small, local timer: no accounts, servers, database, act
 
 ### macOS app
 
-Once a release is published, download the macOS ZIP from this repository's GitHub Releases, extract it, and double-click **Install Hourglass.command** beside **Hourglass.app**. The installer copies the app to `/Applications` (or `~/Applications` if needed) and opens it. Quit an existing Hourglass before an update.
+Download the Universal macOS ZIP from [GitHub Releases](https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0), extract it, and double-click **Install Hourglass.command** beside **Hourglass.app**. The installer copies the app to `/Applications` (or `~/Applications` if needed) and opens it. Quit an existing Hourglass before an update.
 
 The first installed release launch enables **Launch at startup** automatically. After that, Hourglass appears in the menu bar when you log in. The timer starts when you click the icon. You can disable login startup in settings; later launches respect that choice.
 
@@ -28,7 +28,7 @@ Local packages can be generated with `npm run package:macos`; the app, installer
 
 ### Homebrew
 
-These commands become available after the first public Universal release and the generated Cask have been published:
+Install the published Universal macOS app:
 
 ```sh
 brew tap nippyclouding/hourglass https://github.com/nippyclouding/hourglass.git
@@ -36,7 +36,7 @@ brew install --cask nippyclouding/hourglass/hourglass
 open /Applications/Hourglass.app
 ```
 
-Homebrew installs the app bundle without Rust or Node.js. Follow Homebrew's external-tap trust prompt. See [release setup](RELEASE.md) for publication and signing requirements; the Homebrew package is not yet live from this development session.
+Homebrew installs the app bundle without Rust or Node.js. Follow Homebrew's external-tap trust prompt. See [release setup](RELEASE.md) for publication and signing requirements; the Cask is published and installation from the public archive has been verified.
 
 ### Install from Git
 

@@ -2,7 +2,7 @@
 
 Repository: [nippyclouding/hourglass](https://github.com/nippyclouding/hourglass).
 
-The public repository is reachable outside the read-only sandbox and was empty before this publication. The local Apple Silicon app is installed in Applications with its login LaunchAgent registered; a local Universal app and ZIP have been verified. See BUILD_STATUS.md for current publication and CI results.
+The [v0.1.0 release](https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0) is public. Universal macOS and Windows x64 installers passed native CI; the published archive, generated Cask, Git source installation, and Homebrew installation have been verified. Login registration points to the Applications executable. UI interaction and actual login/Sleep tests remain pending. See BUILD_STATUS.md for results and signing limitations.
 
 ## Local macOS app and installer
 
@@ -32,7 +32,7 @@ git push origin v0.1.0
 
 When you publish the draft, `homebrew.yml` downloads the actual published Universal ZIP, computes its SHA-256, and commits `Casks/hourglass.rb` to the repository's default branch. This is an intentional automated repository change. The repository must allow GitHub Actions to write contents; default-branch protection can block this update. If it does, download the generated Cask from the release and submit it to the default branch using the normal review process.
 
-Both workflows are configuration only until run on GitHub. The Universal macOS build has passed locally. Windows must be verified by its native GitHub Actions job; CI results are recorded in BUILD_STATUS.md.
+Both workflows have run successfully for v0.1.0. The Universal macOS build has passed locally. Windows x64 NSIS compilation passed GitHub Actions; actual Windows runtime is still unverified. CI results are recorded in BUILD_STATUS.md.
 
 ## Homebrew installation
 

@@ -1,6 +1,29 @@
 # 검증 상태 — 2026-10-14
 
-## 이번 세션: 실제 설치와 Universal 배포 준비
+## 완료 기록: GitHub 릴리스와 Homebrew 실제 설치
+
+- 공개 저장소에 소스·문서·두 lockfile·아이콘·설치기·워크플로를 게시했습니다. 산출물·개인 설정·자격 증명은 제외했습니다.
+- 공개 Git 저장소를 별도 디렉터리에 클론한 뒤 `npm ci → npm run install:macos`를 실제 수행했습니다. 빌드·Applications 설치·실행 성공.
+- 설치된 앱의 저장된 자동 실행 꺼짐 상태로 재실행했을 때 LaunchAgent를 다시 생성하지 않음을 확인했습니다. 검사 후 원래 설정·로그인 항목을 복원했습니다. 설정창에서 버튼을 누르는 경로는 UI 미검증입니다.
+- 최초 macOS·Windows 네이티브 CI 성공: https://github.com/nippyclouding/hourglass/actions/runs/38566426827
+- 빈 Apple 인증서 환경 변수가 CI의 인증서 가져오기를 유발한 문제를 수정했습니다. 인증서·공증 정보는 구성됐을 때만 전달합니다.
+- Universal macOS·Windows x64 NSIS 릴리스 CI 성공: https://github.com/nippyclouding/hourglass/actions/runs/38568459606
+- 초안 자산 5개를 내려받아 GitHub SHA-256·파일 크기를 검증했고, Universal ZIP 체크섬·무결성·arm64/x86_64·ad-hoc 서명도 확인했습니다.
+- 공개 릴리스: https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0
+- 릴리스 공개 이벤트의 Homebrew Cask 자동 커밋 성공: https://github.com/nippyclouding/hourglass/actions/runs/38570970569
+- 기본 브랜치와 tap의 Cask가 검증한 공개 ZIP의 체크섬을 사용함을 확인했습니다. 브랜치 보호 규칙은 없으며 보호 우회는 하지 않았습니다.
+- `brew tap nippyclouding/hourglass https://github.com/nippyclouding/hourglass.git` 및 `brew install --cask nippyclouding/hourglass/hourglass` 실제 수행 성공. Homebrew 설치 영수증 확인 완료.
+- Homebrew 앱: `/Applications/Hourglass.app`, Universal 바이너리. 기존 수동 설치 앱은 로컬 `.tools/manual-app-backup-*/Hourglass.app`에 보존했습니다.
+- 기존 설정과 로그인 등록을 보존했습니다. 로그인 실행 경로는 `/Applications/Hourglass.app/Contents/MacOS/hourglass`, RunAtLoad는 true입니다.
+- 사용자가 손쉬운 사용·화면 녹음 권한을 거부했습니다. 이후 UI 자동 제어는 시도하지 않았으며 해당 권한도 다시 요청하지 않았습니다.
+- 실제 로그아웃·로그인·Sleep, 메뉴바 클릭·설정 UI·알림·Dock, Intel Mac 및 Windows 실제 실행은 미검증입니다.
+- Developer ID 서명·Apple 공증·Windows 코드 서명은 미완료입니다. Gatekeeper 보호나 quarantine 속성을 변경하지 않았습니다.
+- 현재 Homebrew 7.0.9에서 설치는 성공하지만 Cask의 macOS 문자열 비교 및 legacy pre/postflight 훅에 deprecation 경고가 있습니다. 업그레이드·제거는 실제 수행하지 않았습니다.
+- Homebrew 설치 앱 실행 프로세스 확인: 성공.
+- Gatekeeper 평가 종료 코드: 3; 결과: `/Applications/Hourglass.app: rejected`.
+
+
+## 이번 세션의 초기 준비 기록
 
 - 권한 확대 후 GitHub DNS·HTTPS 접근 정상. 샌드박스 내 DNS 실패와 구분했습니다.
 - `nippyclouding/hourglass`는 공개·빈 저장소이며 기본 브랜치는 main입니다. 기존 소스·릴리스·브랜치 보호 규칙 없음 확인.

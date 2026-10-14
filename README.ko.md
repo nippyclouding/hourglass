@@ -8,7 +8,7 @@ macOS 메뉴바와 Windows 시스템 트레이에서 사용하는 미니멀 타�
 
 [English](README.md) · [설치](#설치) · [소스 빌드](#소스-빌드) · [기여하기](#기여하기) · [MIT License](LICENSE)
 
-> **초기 MVP:** Apple Silicon macOS 빌드, JavaScript 테스트 16개, Rust 테스트 13개, 포맷과 Clippy 검사가 통과했습니다. Applications에 실제 설치했고 로그인 LaunchAgent가 설치된 실행 파일을 가리키는지 확인했습니다. 로컬 Universal macOS 빌드도 성공했습니다. 실제 UI·로그인, Windows CI와 공개 릴리스·Homebrew 설치 검증은 아직 남아 있습니다. 자세한 내용은 [검증 상태](BUILD_STATUS.md)를 참고하세요.
+> **초기 MVP:** macOS 실제 설치·로그인 등록, Git 소스 설치와 Homebrew Cask 설치를 검증했습니다. [v0.1.0](https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0)에 Universal macOS 앱과 Windows x64 설치기가 공개되어 있습니다. 네이티브 CI, JavaScript 테스트 16개, Rust 테스트 13개, 포맷과 Clippy가 통과했습니다. 실제 UI·로그인·Sleep 및 Windows 실행은 미검증이며 macOS 앱은 공증 없는 ad-hoc 서명입니다. 자세한 내용은 [검증 상태](BUILD_STATUS.md)를 참고하세요.
 
 ## 컨셉
 
@@ -20,7 +20,7 @@ Hourglass의 기본 UI는 메뉴바나 시스템 트레이에 있는 모래시�
 
 ### macOS 앱
 
-릴리스가 공개되면 이 저장소의 GitHub Releases에서 macOS ZIP을 다운로드하고 압축을 푼 뒤, **Hourglass.app** 옆의 **Install Hourglass.command**를 더블클릭합니다. 설치기는 앱을 `/Applications` 또는 해당 폴더에 쓸 수 없는 경우 `~/Applications`에 복사하고 실행합니다. 업데이트 전에는 기존 Hourglass를 Quit으로 종료해주세요.
+[GitHub Releases](https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0)에서 Universal macOS ZIP을 다운로드하고 압축을 푼 뒤, **Hourglass.app** 옆의 **Install Hourglass.command**를 더블클릭합니다. 설치기는 앱을 `/Applications` 또는 해당 폴더에 쓸 수 없는 경우 `~/Applications`에 복사하고 실행합니다. 업데이트 전에는 기존 Hourglass를 Quit으로 종료해주세요.
 
 설치된 릴리스 앱의 첫 실행에서 **Launch at startup**을 자동 등록합니다. 이후 Mac에 로그인하면 메뉴바에 Hourglass가 나타나며, 아이콘을 클릭하면 타이머가 시작됩니다. 설정에서 자동 실행을 끄면 이후 실행에서도 그 선택을 유지합니다.
 
@@ -28,7 +28,7 @@ Hourglass의 기본 UI는 메뉴바나 시스템 트레이에 있는 모래시�
 
 ### Homebrew
 
-첫 Universal 릴리스와 생성된 Cask가 공개된 뒤 다음 명령으로 설치할 수 있습니다.
+공개된 Universal macOS 앱은 다음 명령으로 설치할 수 있습니다.
 
 ```sh
 brew tap nippyclouding/hourglass https://github.com/nippyclouding/hourglass.git
@@ -36,7 +36,7 @@ brew install --cask nippyclouding/hourglass/hourglass
 open /Applications/Hourglass.app
 ```
 
-Homebrew 설치에는 Rust나 Node.js가 필요하지 않습니다. 외부 tap에 대한 Homebrew 신뢰 안내를 따라주세요. 공개 릴리스와 서명 설정은 [배포 문서](RELEASE.md)에 정리되어 있습니다. 이번 개발 세션에서 Homebrew 패키지를 실제로 공개하지는 않았습니다.
+Homebrew 설치에는 Rust나 Node.js가 필요하지 않습니다. 외부 tap에 대한 Homebrew 신뢰 안내를 따라주세요. 공개 릴리스와 서명 설정은 [배포 문서](RELEASE.md)에 정리되어 있습니다. Cask 게시와 실제 공개 아카이브의 Homebrew 설치를 검증했습니다.
 
 ### Git 소스에서 설치
 
