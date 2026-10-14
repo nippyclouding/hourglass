@@ -34,6 +34,7 @@ jobs:
     env:
       RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
       HAS_APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE != '' }}
+      HAS_APPLE_NOTARIZATION: ${{ secrets.APPLE_ID != '' && secrets.APPLE_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,15 +73,20 @@ jobs:
           security import "$certificate" -k "$keychain" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$signing_password" "$keychain"
           rm -f "$certificate"
-      - uses: tauri-apps/tauri-action@v1
+      - name: Configure notarization only when credentials are complete
+        if: runner.os == 'macOS' && env.HAS_APPLE_CERTIFICATE == 'true' && env.HAS_APPLE_NOTARIZATION == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY || '-' }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          printf 'APPLE_ID=%s\n' "$APPLE_ID" >> "$GITHUB_ENV"
+          printf 'APPLE_PASSWORD=%s\n' "$APPLE_PASSWORD" >> "$GITHUB_ENV"
+          printf 'APPLE_TEAM_ID=%s\n' "$APPLE_TEAM_ID" >> "$GITHUB_ENV"
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY || '-' }}
         with:
           tagName: ${{ env.RELEASE_TAG }}
           releaseName: Hourglass ${{ env.RELEASE_TAG }}
