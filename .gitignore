@@ -1,0 +1,38 @@
+# Node dependencies and local caches
+node_modules/
+/.npm/
+
+# Rust / Tauri build output and generated schemas
+/target/
+/src-tauri/target/
+/src-tauri/gen/schemas/
+/dist/
+
+# Local environment variables and signing credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.p12
+*.pfx
+*.key
+
+# Local development tools and assistant configuration
+/.tools/
+/.codex/
+/.agents/
+/.aws/
+/.idea/
+
+# Python cache from development scripts
+__pycache__/
+*.py[cod]
+
+# OS metadata and logs
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+
+# Keep package-lock.json, src-tauri/Cargo.lock, source files,
+# generated icons, and .github/workflows/ in version control.

@@ -1,0 +1,25 @@
+{
+  "name": "hourglass",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A tiny, one-click menu bar and system tray timer.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nippyclouding/hourglass.git"
+  },
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "test": "node --test tests/settings.test.cjs tests/distribution.test.cjs",
+    "check": "node scripts/check.mjs",
+    "install:macos": "npm run build -- --bundles app && bash scripts/install-macos.sh",
+    "install:windows": "npm run build -- --bundles nsis && node scripts/install-windows.mjs",
+    "package:macos": "npm run build -- --bundles app && bash scripts/package-macos.sh",
+    "cask": "node scripts/generate-cask.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.2"
+  }
+}

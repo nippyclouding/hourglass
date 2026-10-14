@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Hourglass</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="settings.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Timer</h1>
+      <form id="settings-form">
+        <div class="duration">
+          <label for="minutes">Time</label>
+          <div class="input-unit">
+            <input id="minutes" name="minutes" type="number" min="1" max="525600" step="1" value="50" required inputmode="numeric" autocomplete="off" disabled />
+            <span>min</span>
+          </div>
+        </div>
+        <label class="startup" for="startup">
+          <input id="startup" name="startup" type="checkbox" disabled />
+          <span>Launch at startup</span>
+        </label>
+        <p id="message" role="status" aria-live="polite"></p>
+        <button id="save" type="submit" disabled>Save</button>
+      </form>
+      <footer>
+        <button id="restart" type="button" disabled>Restart timer</button>
+        <button id="quit" type="button">Quit</button>
+      </footer>
+    </main>
+  </body>
+</html>

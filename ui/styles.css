@@ -1,0 +1,64 @@
+:root {
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  color: #252525;
+  background: #fafafa;
+  --border: #d5d5d5;
+  --muted: #666;
+  --focus: #3a3a3a;
+  --input: #fff;
+  --button: #f0f0f0;
+  --hover: #e6e6e6;
+  --error: #a32424;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #ededed;
+    background: #252525;
+    --border: #575757;
+    --muted: #b4b4b4;
+    --focus: #ddd;
+    --input: #303030;
+    --button: #3a3a3a;
+    --hover: #444;
+    --error: #ffaaaa;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { padding: 18px 20px 14px; }
+h1 { margin: 0 0 18px; font-size: 16px; font-weight: 600; }
+button, input { font: inherit; }
+.duration { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.input-unit { display: flex; align-items: center; gap: 8px; }
+.input-unit span { color: var(--muted); }
+input[type="number"] {
+  width: 100px;
+  height: 32px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--input);
+  color: inherit;
+}
+.startup { display: flex; align-items: center; gap: 8px; margin-top: 17px; }
+input[type="checkbox"] { width: 14px; height: 14px; margin: 0; accent-color: var(--focus); }
+#message { min-height: 28px; max-height: 28px; overflow: auto; margin: 7px 0 5px; font-size: 11px; line-height: 14px; color: var(--muted); }
+#message.error { color: var(--error); }
+#save {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: inherit;
+  background: var(--button);
+}
+#save:hover:enabled { background: var(--hover); }
+button:disabled, input:disabled { opacity: .55; }
+footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding-top: 9px; border-top: 1px solid var(--border); }
+footer button { border: 0; padding: 0; background: none; color: var(--muted); cursor: pointer; }
+footer button:hover:enabled { color: inherit; }
+footer button:disabled { cursor: default; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }

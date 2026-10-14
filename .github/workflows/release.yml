@@ -1,0 +1,100 @@
+name: Release installers
+
+on:
+  push:
+    tags: ["v[0-9]*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: universal-apple-darwin
+            bundles: app
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+    runs-on: ${{ matrix.os }}
+    env:
+      HAS_APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target == 'universal-apple-darwin' && 'aarch64-apple-darwin,x86_64-apple-darwin' || matrix.target }}
+          components: rustfmt, clippy
+      - run: npm ci
+      - name: Verify tag matches app version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node -e "if (process.env.RELEASE_TAG !== 'v' + require('./package.json').version) process.exit(1)"
+      - run: npm run check
+      - run: npm test
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+      - name: Import Developer ID certificate when configured
+        if: runner.os == 'macOS' && env.HAS_APPLE_CERTIFICATE == 'true'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          certificate="$RUNNER_TEMP/hourglass-certificate.p12"
+          keychain="$RUNNER_TEMP/hourglass-signing.keychain-db"
+          signing_password="$(openssl rand -base64 32)"
+          echo "::add-mask::$signing_password"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$certificate"
+          security create-keychain -p "$signing_password" "$keychain"
+          security default-keychain -s "$keychain"
+          security unlock-keychain -p "$signing_password" "$keychain"
+          security set-keychain-settings -t 3600 -u "$keychain"
+          security import "$certificate" -k "$keychain" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$signing_password" "$keychain"
+          rm -f "$certificate"
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY || '-' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Hourglass ${{ github.ref_name }}
+          releaseBody: "Installers are built from the tagged source. macOS users can extract the ZIP and run Install Hourglass.command."
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+      - name: Package universal macOS app and Homebrew Cask
+        if: runner.os == 'macOS'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          bash scripts/package-macos.sh src-tauri/target/universal-apple-darwin/release/bundle/macos/Hourglass.app universal
+          npm run cask -- --archive "dist/Hourglass_${RELEASE_TAG#v}_universal.zip" --output dist/hourglass.rb
+          gh release upload "$RELEASE_TAG" dist/Hourglass_*.zip dist/Hourglass_*.sha256 dist/hourglass.rb --clobber
+      - name: Remove temporary signing keychain
+        if: always() && runner.os == 'macOS' && env.HAS_APPLE_CERTIFICATE == 'true'
+        run: security delete-keychain "$RUNNER_TEMP/hourglass-signing.keychain-db"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Hourglass-${{ matrix.target }}
+          path: |
+            dist/
+            src-tauri/target/${{ matrix.target }}/release/bundle/
