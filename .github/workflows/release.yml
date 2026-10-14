@@ -3,12 +3,19 @@ name: Release installers
 on:
   push:
     tags: ["v[0-9]*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build
+        required: true
+        default: v0.1.0
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -25,9 +32,12 @@ jobs:
             bundles: nsis
     runs-on: ${{ matrix.os }}
     env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
       HAS_APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE != '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -38,8 +48,6 @@ jobs:
           components: rustfmt, clippy
       - run: npm ci
       - name: Verify tag matches app version
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
         run: node -e "if (process.env.RELEASE_TAG !== 'v' + require('./package.json').version) process.exit(1)"
       - run: npm run check
       - run: npm test
@@ -74,8 +82,8 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: Hourglass ${{ github.ref_name }}
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: Hourglass ${{ env.RELEASE_TAG }}
           releaseBody: "Installers are built from the tagged source. macOS users can extract the ZIP and run Install Hourglass.command."
           releaseDraft: true
           prerelease: false
@@ -84,7 +92,6 @@ jobs:
         if: runner.os == 'macOS'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           bash scripts/package-macos.sh src-tauri/target/universal-apple-darwin/release/bundle/macos/Hourglass.app universal
           npm run cask -- --archive "dist/Hourglass_${RELEASE_TAG#v}_universal.zip" --output dist/hourglass.rb
