@@ -1,0 +1,45 @@
+cask "hourglass" do
+  version "0.1.0"
+  sha256 "414b227049ce2ee787a3caa8239208a41069a8b5d254f215984e07b3649b8a74"
+
+  url "https://github.com/nippyclouding/hourglass/releases/download/v#{version}/Hourglass_#{version}_universal.zip"
+  name "Hourglass"
+  desc "One-click menu bar timer"
+  homepage "https://github.com/nippyclouding/hourglass"
+
+  depends_on macos: ">= :big_sur"
+
+  app "Hourglass.app"
+
+  # Preserve the actual login choice through an upgrade or reinstall.
+  uninstall_preflight do
+    agent = Pathname("#{Dir.home}/Library/LaunchAgents/io.hourglass.timer.plist")
+    backup = Pathname("#{Dir.home}/Library/Application Support/io.hourglass.timer/homebrew-launch-agent.plist")
+    backup.dirname.mkpath
+    backup.delete if backup.exist?
+    FileUtils.cp(agent, backup) if agent.exist?
+  end
+
+  postflight do
+    backup = Pathname("#{Dir.home}/Library/Application Support/io.hourglass.timer/homebrew-launch-agent.plist")
+    if backup.exist?
+      agent = Pathname("#{Dir.home}/Library/LaunchAgents/io.hourglass.timer.plist")
+      agent.dirname.mkpath
+      system_command "/usr/libexec/PlistBuddy",
+                     args: ["-c", "Set :ProgramArguments:0 #{appdir}/Hourglass.app/Contents/MacOS/hourglass", backup.to_s]
+      FileUtils.mv(backup, agent)
+    end
+  end
+
+  uninstall launchctl:  "io.hourglass.timer",
+            signal:     [["TERM", "io.hourglass.timer"]],
+            delete:     "#{Dir.home}/Library/LaunchAgents/io.hourglass.timer.plist",
+            on_upgrade: :signal
+
+  zap trash: "~/Library/Application Support/io.hourglass.timer"
+
+  caveats <<~EOS
+    Open Hourglass.app once after installation to enable launch at login.
+    You can turn this off in Hourglass settings.
+  EOS
+end
