@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Timer complete</title>
+    <link rel="stylesheet" href="completion.css" />
+    <script src="completion.js" defer></script>
+  </head>
+  <body>
+    <main role="alertdialog" aria-labelledby="title" aria-describedby="description">
+      <div class="hourglass" aria-hidden="true">⌛</div>
+      <h1 id="title">Timer complete</h1>
+      <p id="description">All the sand has run through the hourglass.</p>
+      <p id="message" role="status" aria-live="polite"></p>
+      <button id="dismiss" type="button">OK</button>
+    </main>
+  </body>
+</html>

@@ -4,7 +4,7 @@ use tauri::{AppHandle, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuild
 use tauri_plugin_notification::NotificationExt;
 
 use crate::timer::{format_remaining, Timer};
-use crate::{platform, AppState};
+use crate::{completion, platform, AppState};
 
 pub const TRAY_ID: &str = "hourglass";
 
@@ -82,16 +82,23 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
                 match button {
                     MouseButton::Left => {
                         let state = app.state::<AppState>();
-                        let finished = {
+                        let (finished, acknowledged) = {
                             let mut inner = state.inner.lock().unwrap();
                             let duration = std::time::Duration::from_secs(
                                 u64::from(inner.settings.minutes) * 60,
                             );
-                            inner.timer.click(duration, SystemTime::now())
+                            let finished = inner.timer.click(duration, SystemTime::now());
+                            (finished, !matches!(inner.timer, Timer::Finished { .. }))
                         };
                         state.wake.notify_one();
                         if finished {
                             notify_finished(app);
+                        }
+                        // A click exactly at expiry also acknowledges completion.
+                        if acknowledged {
+                            if let Err(error) = completion::close(app) {
+                                eprintln!("Could not close completion alert: {error}");
+                            }
                         }
                         refresh(app);
                     }
@@ -170,11 +177,14 @@ pub fn refresh(app: &AppHandle) {
 }
 
 fn notify_finished(app: &AppHandle) {
+    if let Err(error) = completion::show(app) {
+        eprintln!("Could not show completion alert: {error}");
+    }
     if let Err(error) = app
         .notification()
         .builder()
         .title("Hourglass")
-        .body("타이머가 완료되었습니다.")
+        .body(completion::MESSAGE)
         .show()
     {
         eprintln!("Could not show completion notification: {error}");

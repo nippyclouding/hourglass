@@ -70,20 +70,17 @@ impl Timer {
         }
     }
 
-    /// Restart the original session duration, even if saved settings have changed.
+    /// Restart with the requested full duration and reset animation progress.
     /// Restarting a paused timer also resumes it.
-    pub fn restart(&mut self, now: SystemTime) -> bool {
+    pub fn restart(&mut self, duration: Duration, now: SystemTime) -> bool {
         if !self.can_restart(now) {
             return false;
         }
-        if let Self::Running { duration, .. } | Self::Paused { duration, .. } = *self {
-            *self = Self::Running {
-                end_time: now + duration,
-                duration,
-            };
-            return true;
-        }
-        false
+        *self = Self::Running {
+            end_time: now + duration,
+            duration,
+        };
+        true
     }
 
     /// Animation follows elapsed session time, so pausing freezes both sand and grains.
@@ -245,7 +242,7 @@ mod tests {
         let mut timer = Timer::Idle;
         timer.click(Duration::from_secs(3000), at(100));
         assert_eq!(timer.remaining(at(700)), Duration::from_secs(2400));
-        assert!(timer.restart(at(700)));
+        assert!(timer.restart(Duration::from_secs(3000), at(700)));
         assert_eq!(timer.remaining(at(700)), Duration::from_secs(3000));
         assert_eq!(timer.icon_frame(at(700)), Some(0));
         assert!(!timer.advance(at(3100)), "the old deadline is discarded");
@@ -254,31 +251,52 @@ mod tests {
     }
 
     #[test]
-    fn restart_uses_the_original_duration_and_resumes_a_paused_timer() {
+    fn restart_uses_the_new_duration_and_resumes_a_paused_timer() {
         let mut timer = Timer::Idle;
         timer.click(Duration::from_secs(3000), at(100));
         // Passing new settings to a pause click must not change this session.
         timer.click(Duration::from_secs(1500), at(700));
-        assert!(timer.restart(at(900)));
-        assert_eq!(timer.remaining(at(900)), Duration::from_secs(3000));
-        assert_eq!(timer.remaining(at(901)), Duration::from_secs(2999));
-        assert!(matches!(timer, Timer::Running { .. }));
+        assert!(timer.restart(Duration::from_secs(1500), at(900)));
+        assert_eq!(timer.remaining(at(900)), Duration::from_secs(1500));
+        assert_eq!(timer.remaining(at(901)), Duration::from_secs(1499));
+        assert_eq!(timer.icon_frame(at(900)), Some(0));
+        assert!(
+            matches!(timer, Timer::Running { duration, .. } if duration == Duration::from_secs(1500))
+        );
+        assert!(timer.advance(at(2400)));
+        assert!(!timer.advance(at(3100)));
+    }
+
+    #[test]
+    fn restart_applies_shorter_and_longer_durations_to_a_running_timer() {
+        for seconds in [1500, 5400] {
+            let mut timer = Timer::Idle;
+            timer.click(Duration::from_secs(3000), at(100));
+            let duration = Duration::from_secs(seconds);
+            assert!(timer.restart(duration, at(700)));
+            assert_eq!(timer.remaining(at(700)), duration);
+            assert_eq!(timer.icon_frame(at(700)), Some(0));
+            assert!(matches!(timer, Timer::Running { duration: actual, .. } if actual == duration));
+            assert!(!timer.advance(at(700 + seconds - 1)));
+            assert!(timer.advance(at(700 + seconds)));
+            assert!(!timer.advance(at(701 + seconds)));
+        }
     }
 
     #[test]
     fn restart_does_not_start_an_idle_or_finished_timer() {
         let mut timer = Timer::Idle;
-        assert!(!timer.restart(at(100)));
+        assert!(!timer.restart(Duration::from_secs(1500), at(100)));
         timer.click(Duration::from_secs(60), at(100));
         assert!(
-            !timer.restart(at(160)),
+            !timer.restart(Duration::from_secs(1500), at(160)),
             "expired timers cannot be restarted"
         );
         assert!(
             timer.advance(at(160)),
             "expiry still emits its notification"
         );
-        assert!(!timer.restart(at(161)));
+        assert!(!timer.restart(Duration::from_secs(1500), at(161)));
     }
 
     #[test]

@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod completion;
 mod installation;
 mod platform;
 mod settings;
@@ -8,7 +9,7 @@ mod tray;
 
 use serde::Serialize;
 use std::sync::{Arc, Condvar, Mutex};
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 use tauri::{AppHandle, Manager, RunEvent, State};
 use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_store::Store;
@@ -26,6 +27,29 @@ struct Inner {
     settings: settings::Settings,
     last_view: Option<tray::View>,
     stopping: bool,
+}
+
+impl Inner {
+    fn restart_timer(
+        &mut self,
+        minutes: u32,
+        now: SystemTime,
+        persist: impl FnOnce(&settings::Settings, &settings::Settings) -> Result<(), String>,
+    ) -> Result<(), String> {
+        settings::validate(minutes)?;
+        let mut timer = self.timer;
+        if !timer.restart(Duration::from_secs(u64::from(minutes) * 60), now) {
+            return Err("There is no active timer to restart.".into());
+        }
+        let settings = settings::Settings {
+            minutes,
+            ..self.settings.clone()
+        };
+        persist(&self.settings, &settings)?;
+        self.settings = settings;
+        self.timer = timer;
+        Ok(())
+    }
 }
 
 struct AppState {
@@ -58,17 +82,33 @@ async fn get_settings(
 }
 
 #[tauri::command]
-async fn restart_timer(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
-    let restarted = state.inner.lock().unwrap().timer.restart(SystemTime::now());
+async fn restart_timer(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    minutes: u32,
+) -> Result<(), String> {
+    state.inner.lock().unwrap().restart_timer(
+        minutes,
+        SystemTime::now(),
+        |previous, settings| {
+            state.store.set(
+                "settings",
+                serde_json::to_value(settings).map_err(|error| error.to_string())?,
+            );
+            if let Err(error) = state.store.save() {
+                state
+                    .store
+                    .set("settings", serde_json::to_value(previous).unwrap());
+                return Err(format!("Could not save settings: {error}"));
+            }
+            Ok(())
+        },
+    )?;
     state.wake.notify_one();
     let handle = app.clone();
     app.run_on_main_thread(move || tray::refresh(&handle))
         .map_err(|error| error.to_string())?;
-    if restarted {
-        Ok(())
-    } else {
-        Err("There is no active timer to restart.".into())
-    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -106,7 +146,7 @@ async fn save_settings(
             ),
         });
     }
-    // A running or paused timer keeps its current duration; this changes the next one.
+    // Keep the active session unchanged until the next start or explicit restart.
     inner.settings = settings;
     drop(inner);
     let handle = app.clone();
@@ -136,6 +176,7 @@ fn main() {
             get_settings,
             save_settings,
             restart_timer,
+            completion::dismiss_completion,
             close_settings,
             quit
         ])
@@ -176,4 +217,86 @@ fn main() {
         }
         _ => {}
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn active() -> Inner {
+        let mut timer = timer::Timer::Idle;
+        timer.click(Duration::from_secs(3000), SystemTime::UNIX_EPOCH);
+        Inner {
+            timer,
+            settings: settings::Settings::default(),
+            last_view: None,
+            stopping: false,
+        }
+    }
+
+    #[test]
+    fn restart_persists_the_new_minutes_without_changing_autostart() {
+        let mut inner = active();
+        let now = SystemTime::UNIX_EPOCH + Duration::from_secs(600);
+        let mut saved = None;
+        inner
+            .restart_timer(25, now, |previous, settings| {
+                assert_eq!(previous.minutes, 50);
+                saved = Some(settings.clone());
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(saved.unwrap().minutes, 25);
+        assert_eq!(inner.settings.minutes, 25);
+        assert!(!inner.settings.launch_at_startup);
+        assert_eq!(inner.timer.remaining(now), Duration::from_secs(1500));
+    }
+
+    #[test]
+    fn failed_restart_persistence_keeps_the_timer_and_settings() {
+        let mut inner = active();
+        let previous_timer = inner.timer;
+        let result =
+            inner.restart_timer(
+                25,
+                SystemTime::UNIX_EPOCH,
+                |_, _| Err("Disk is full".into()),
+            );
+        assert_eq!(result, Err("Disk is full".into()));
+        assert_eq!(inner.timer, previous_timer);
+        assert_eq!(inner.settings.minutes, 50);
+    }
+
+    #[test]
+    fn invalid_or_inactive_restart_does_not_persist_or_change_state() {
+        for (minutes, now, timer) in [
+            (0, SystemTime::UNIX_EPOCH, active().timer),
+            (
+                settings::MAX_MINUTES + 1,
+                SystemTime::UNIX_EPOCH,
+                active().timer,
+            ),
+            (25, SystemTime::UNIX_EPOCH, timer::Timer::Idle),
+            (
+                25,
+                SystemTime::UNIX_EPOCH + Duration::from_secs(3000),
+                active().timer,
+            ),
+            (
+                25,
+                SystemTime::UNIX_EPOCH,
+                timer::Timer::Finished {
+                    blink_started: SystemTime::UNIX_EPOCH,
+                },
+            ),
+        ] {
+            let mut inner = active();
+            inner.timer = timer;
+            assert!(inner
+                .restart_timer(minutes, now, |_, _| panic!("must not save"))
+                .is_err());
+            assert_eq!(inner.timer, timer);
+            assert_eq!(inner.settings.minutes, 50);
+        }
+    }
 }

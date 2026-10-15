@@ -60,21 +60,23 @@ On Windows, use `npm run install:windows` instead. This builds and runs the NSIS
 | Left-click while running | Pause |
 | Left-click while paused | Resume |
 | Right-click | Open the small settings window |
-| Choose **Restart timer** in settings | Reset the current timer to its original duration and run it again |
-| Timer completes | Send one system notification and blink the icon every 0.5 seconds for up to 15 seconds |
-| Left-click after completion | Dismiss the finished state and stop blinking; click again to start a new timer |
+| Choose **Restart timer** in settings | Save the entered duration and immediately restart the current timer from that full duration |
+| Timer completes | Show a centered completion alert, send one system notification, and blink the icon every 0.5 seconds for up to 15 seconds |
+| Left-click after completion | Close the completion alert, clear the finished state, and stop blinking; click again to start a new timer |
 
-The default duration is **50 minutes**. Enter a whole number of minutes in settings and press **Save**. Changes apply to the next timer; a running or paused timer keeps its current duration. Settings survive app restarts.
+The default duration is **50 minutes**. Enter a whole number of minutes in settings and press **Save** to use it for the next timer; a running or paused timer keeps its current duration. To apply the entered time immediately, press **Restart timer**. Settings survive app restarts.
 
 The settings window contains:
 
 - **Time** — from 1 to 525,600 minutes.
 - **Launch at startup** — start Hourglass when you log in; enabled on the first installed release launch.
-- **Save** — save settings and close the window.
-- **Restart timer** — restart a running or paused timer from its full original duration and close the window. Unsaved settings are not applied. This action is disabled without an active timer.
+- **Save** — save the duration and launch-at-startup setting and close the window. The current timer is unchanged.
+- **Restart timer** — validate and save the entered duration, then restart a running or paused timer from that full duration and close the window. The saved time is also used for future timers. This action does not save changes to **Launch at startup** and is disabled while idle or finished. If the time is invalid or cannot be saved, the timer stays unchanged and the window remains open.
 - **Quit** — exit Hourglass.
 
 Click outside the settings window or press **Escape** to close it without saving.
+
+When the timer expires, an always-on-top window appears in the center of the screen with the title **Timer complete** and the message “All the sand has run through the hourglass.” The system notification uses the same English text and is sent once per completed timer, including after waking from Sleep. The completion alert stays open when it loses focus. Press **OK**, **Enter**, or **Escape** to dismiss it, return the timer to idle, and stop blinking. A left-click on the tray icon does the same; the next click starts a new timer.
 
 While running, the hourglass shows falling grains and gradually transfers sand from top to bottom. The icon updates twice per second. Pausing freezes the animation; restarting returns the sand to the top.
 
@@ -84,8 +86,8 @@ While running, the hourglass shows falling grains and gradually transfers sand f
 | --- | --- | --- |
 | Icon location | Menu bar | System tray / notification area |
 | Remaining time | Next to the icon and in its tooltip | In the icon's tooltip |
-| Main window | None | None |
-| Dock / taskbar | Hidden | Settings window skips the taskbar |
+| App windows | Settings and completion alert only | Settings and completion alert only |
+| Dock / taskbar | Hidden | Settings and completion windows skip the taskbar |
 | Launch at login | LaunchAgent | Windows autostart registration |
 
 Windows may place the icon in the tray's hidden-icons area. Right-click the hourglass there to open settings.

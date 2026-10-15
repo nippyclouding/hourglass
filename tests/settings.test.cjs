@@ -16,6 +16,11 @@ function setup(handler = async () => ({ minutes: 50, launchAtStartup: false }), 
       reportValidity() { return true; }, focus() {}, select() {},
     };
   }
+  let minutesValue = "50";
+  Object.defineProperty(elements.minutes, "value", {
+    get() { return minutesValue; },
+    set(value) { minutesValue = String(value); },
+  });
   const events = {};
   const invoke = async (command, args) => {
     calls.push({ command, args });
@@ -42,7 +47,7 @@ test("loads persisted settings before allowing edits", async () => {
   const app = setup(async () => ({ minutes: 90, launchAtStartup: true }));
   assert.equal(app.elements.save.disabled, true);
   await app.loaded();
-  assert.equal(app.elements.minutes.value, 90);
+  assert.equal(app.elements.minutes.value, "90");
   assert.equal(app.elements.startup.checked, true);
   assert.equal(app.elements.save.disabled, false);
 });
@@ -123,7 +128,7 @@ test("restart is disabled without an active timer", async () => {
   assert.equal(app.calls.length, 1);
 });
 
-test("restart does not save or use unsaved time and startup edits", async () => {
+test("restart applies the entered minutes without saving startup edits", async () => {
   const app = setup(async () => ({ minutes: 50, launchAtStartup: false, canRestart: true }));
   await app.loaded();
   assert.equal(app.elements.restart.disabled, false);
@@ -131,7 +136,35 @@ test("restart does not save or use unsaved time and startup edits", async () => 
   app.elements.startup.checked = true;
   await app.elements.restart.events.click();
   assert.deepEqual(app.calls.map(call => call.command), ["get_settings", "restart_timer", "close_settings"]);
-  assert.equal(app.calls[1].args, undefined);
+  assert.equal(app.calls[1].args.minutes, 25);
+  assert.deepEqual(Object.keys(app.calls[1].args), ["minutes"]);
+});
+
+test("restart uses the latest saved duration after reopening settings", async () => {
+  const app = setup(async () => ({ minutes: 90, launchAtStartup: true, canRestart: true }));
+  await app.loaded();
+  await app.elements.restart.events.click();
+  assert.equal(app.calls[1].args.minutes, 90);
+});
+
+test("invalid input never restarts or closes the timer settings", async () => {
+  const app = setup(async () => ({ minutes: 50, launchAtStartup: false, canRestart: true }));
+  await app.loaded();
+  for (const value of ["", " ", "0", "-1", "1.5", "abc", "525601"]) {
+    app.elements.minutes.value = value;
+    await app.elements.restart.events.click();
+  }
+  assert.equal(app.calls.length, 1);
+  assert.equal(app.elements.restart.disabled, false);
+  assert.match(app.elements.message.textContent, /whole number/);
+});
+
+test("native form validation also blocks restart", async () => {
+  const app = setup(async () => ({ minutes: 50, canRestart: true }));
+  await app.loaded();
+  app.elements["settings-form"].reportValidity = () => false;
+  await app.elements.restart.events.click();
+  assert.equal(app.calls.length, 1);
 });
 
 test("a failed restart stays open with an error", async () => {

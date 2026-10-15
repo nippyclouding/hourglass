@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "completion",
+  "description": "Allow the local timer completion window to dismiss its alert.",
+  "windows": ["completion"],
+  "permissions": ["core:default"]
+}

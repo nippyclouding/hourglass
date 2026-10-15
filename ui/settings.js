@@ -44,14 +44,21 @@ async function load() {
   }
 }
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (!ready || saving || !form.reportValidity()) return;
+function readMinutes() {
+  if (!form.reportValidity()) return null;
   const value = Number(minutes.value);
   if (minutes.value.trim() === "" || !Number.isInteger(value) || value < 1 || value > 525600) {
     showError("Enter a whole number from 1 to 525600 minutes.");
-    return;
+    return null;
   }
+  return value;
+}
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!ready || saving) return;
+  const value = readMinutes();
+  if (value === null) return;
   saving = true;
   setDisabled(true);
   message.textContent = "";
@@ -74,13 +81,14 @@ quit.addEventListener("click", async () => {
 
 restart.addEventListener("click", async () => {
   if (!ready || saving || !canRestart) return;
+  const value = readMinutes();
+  if (value === null) return;
   saving = true;
   setDisabled(true);
   message.textContent = "";
   message.classList.remove("error");
   try {
-    // Restart the session in Rust without saving edits in this form.
-    await invoke("restart_timer");
+    await invoke("restart_timer", { minutes: value });
     await invoke("close_settings");
   } catch (error) {
     showError(error);

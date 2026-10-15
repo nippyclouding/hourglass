@@ -12,7 +12,7 @@
     "tauri": "tauri",
     "dev": "tauri dev",
     "build": "tauri build",
-    "test": "node --test tests/settings.test.cjs tests/distribution.test.cjs",
+    "test": "node --test tests/settings.test.cjs tests/completion.test.cjs tests/distribution.test.cjs",
     "check": "node scripts/check.mjs",
     "install:macos": "npm run build -- --bundles app && bash scripts/install-macos.sh",
     "install:windows": "npm run build -- --bundles nsis && node scripts/install-windows.mjs",
