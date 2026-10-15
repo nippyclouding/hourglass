@@ -8,7 +8,9 @@ macOS 메뉴바와 Windows 시스템 트레이에서 사용하는 미니멀 타�
 
 [English](README.md) · [설치](#설치) · [소스 빌드](#소스-빌드) · [기여하기](#기여하기) · [MIT License](LICENSE)
 
-> **초기 MVP:** macOS 실제 설치·로그인 등록, Git 소스 설치와 Homebrew Cask 설치를 검증했습니다. [v0.1.0](https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0)에 Universal macOS 앱과 Windows x64 설치기가 공개되어 있습니다. 네이티브 CI, JavaScript 테스트 16개, Rust 테스트 13개, 포맷과 Clippy가 통과했습니다. 실제 UI·로그인·Sleep 및 Windows 실행은 미검증이며 macOS 앱은 공증 없는 ad-hoc 서명입니다. 자세한 내용은 [검증 상태](BUILD_STATUS.md)를 참고하세요.
+> **초기 MVP:** macOS 실제 설치·로그인 등록, Git 소스 설치와 Homebrew Cask 설치를 검증했습니다. 현재 소스의 JavaScript 테스트 24개, Rust 테스트 19개, 포맷, Clippy와 macOS·Windows 네이티브 CI가 통과했습니다. 실제 UI·로그인·Sleep 및 Windows 실행은 미검증이며 macOS 앱은 공증 없는 ad-hoc 서명입니다. 자세한 내용은 [검증 상태](BUILD_STATUS.md)를 참고하세요.
+>
+> **다운로드 상태:** [v0.1.0](https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0)에 Universal macOS 앱과 Windows x64 설치기가 공개되어 있습니다. 아래 설명의 재시작 시간 수정과 중앙 완료 알림은 현재 소스와 로컬 업데이트 앱에 반영되어 있으며, 공개 v0.1.0 설치 파일과 Homebrew 다운로드는 이번 빌드로 교체하지 않았습니다.
 
 ## 컨셉
 
@@ -159,10 +161,11 @@ Rust가 타이머, 트레이 이벤트, 알림, 설정을 처리합니다. 설�
 공식 Tauri 플러그인으로 로컬 설정 저장, 자동 시작, 알림, 중복 실행 방지를 처리합니다. 플랫폼별 표현 차이는 `platform.rs`에 분리했습니다.
 
 ```text
-ui/                       작은 설정 화면
+ui/                       설정 화면과 완료 알림 화면
 src-tauri/src/main.rs      앱 수명 주기와 설정 명령
 src-tauri/src/timer.rs     종료 시각 기반 상태 머신과 테스트
 src-tauri/src/tray.rs      트레이 이벤트, 표시, 알림, 작업 스레드
+src-tauri/src/completion.rs 중앙 완료 알림과 확인 처리
 src-tauri/src/settings.rs  설정 저장과 자동 시작
 src-tauri/src/platform.rs  플랫폼별 표현 차이
 src-tauri/Info.plist       macOS Dock 표시 설정

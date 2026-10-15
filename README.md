@@ -8,7 +8,9 @@ A minimal menu bar and system tray timer for macOS and Windows. Click the hourgl
 
 [한국어](README.ko.md) · [Install](#installation) · [Build from source](#build-from-source) · [Contributing](#contributing) · [MIT License](LICENSE)
 
-> **Early MVP:** macOS installation and login registration, Git source installation, and Homebrew Cask installation have been verified. Universal macOS and Windows x64 installers are published in [v0.1.0](https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0); native CI, 16 JavaScript tests, 13 Rust tests, formatting, and Clippy pass. Native UI, actual login/Sleep, and Windows runtime remain unverified. macOS downloads are ad-hoc signed without Apple notarization. See [verification status](BUILD_STATUS.md).
+> **Early MVP:** macOS installation and login registration, Git source installation, and Homebrew Cask installation have been verified. The current source passes 24 JavaScript tests, 19 Rust tests, formatting, Clippy, and macOS/Windows native CI. Native UI, actual login/Sleep, and Windows runtime remain unverified. macOS downloads are ad-hoc signed without Apple notarization. See [verification status](BUILD_STATUS.md).
+>
+> **Download status:** [v0.1.0](https://github.com/nippyclouding/hourglass/releases/tag/v0.1.0) provides Universal macOS and Windows x64 installers. The restart-duration fix and centered completion alert described below are currently available in source and the locally updated app; the published v0.1.0 installers and Homebrew download have not been replaced with this build.
 
 ## The idea
 
@@ -159,10 +161,11 @@ Rust owns the timer, tray events, notifications, and settings. The settings WebV
 Official Tauri plugins provide local settings storage, autostart, notifications, and single-instance handling. Platform-specific presentation is isolated in `platform.rs`.
 
 ```text
-ui/                       Small settings interface
+ui/                       Settings and completion alert interfaces
 src-tauri/src/main.rs      App lifecycle and settings commands
 src-tauri/src/timer.rs     Deadline-based state machine and tests
 src-tauri/src/tray.rs      Tray events, display, notifications, worker
+src-tauri/src/completion.rs Centered completion alert and acknowledgement
 src-tauri/src/settings.rs  Persistent settings and autostart
 src-tauri/src/platform.rs  Platform-specific presentation
 src-tauri/Info.plist       macOS Dock visibility
